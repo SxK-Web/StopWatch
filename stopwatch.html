@@ -192,7 +192,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Interval Stopwatch</h1>
+    <h1>Interval Stopwatch (V3)</h1>
 
     <div class="display" id="display">00:00</div>
     <div class="ms" id="ms">.00</div>
@@ -282,6 +282,12 @@
     function unlockAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') audioCtx.resume();
+      // iOS requires an actual buffer source to be played during the gesture to unlock
+      const silentBuf = audioCtx.createBuffer(1, 1, 22050);
+      const src = audioCtx.createBufferSource();
+      src.buffer = silentBuf;
+      src.connect(audioCtx.destination);
+      src.start(0);
     }
 
     function beep() {

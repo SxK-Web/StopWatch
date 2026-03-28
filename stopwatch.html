@@ -279,8 +279,13 @@
       return (parseInt(pauseSecsInput.value) || 0) * 1000;
     }
 
-    function beep() {
+    function unlockAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function beep() {
+      unlockAudio();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain);
@@ -348,6 +353,7 @@
     }
 
     startStopBtn.addEventListener('click', () => {
+      unlockAudio();
       if (autoPaused) {
         // Manual resume during auto-pause
         cancelAnimationFrame(pauseRafId);
@@ -357,7 +363,6 @@
       }
 
       if (!running) {
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         startTime = Date.now() - elapsed;
         const iv = getIntervalMs();
         lastBeepAt = iv > 0 ? Math.floor(elapsed / iv) * iv : 0;

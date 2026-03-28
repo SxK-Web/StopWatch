@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interval Stopwatch</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #0f0f0f;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 2.5rem;
+    }
+
+    .display {
+      font-size: 5rem;
+      font-weight: 200;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+      margin-bottom: 0.25rem;
+      transition: color 0.1s;
+    }
+
+    .display.beeping {
+      color: #f0a500;
+    }
+
+    .display.paused-auto {
+      color: #e05555;
+    }
+
+    .ms {
+      font-size: 2rem;
+      color: #888;
+      margin-bottom: 2.5rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-bar-wrapper {
+      background: #1e1e1e;
+      border-radius: 4px;
+      height: 6px;
+      margin-bottom: 2.5rem;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #f0a500;
+      border-radius: 4px;
+      transition: width 0.1s linear;
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 2.5rem;
+    }
+
+    button {
+      padding: 0.75rem 2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    #startStop {
+      background: #f0a500;
+      color: #0f0f0f;
+      min-width: 100px;
+    }
+
+    #startStop.running {
+      background: #e05555;
+      color: #fff;
+    }
+
+    #reset {
+      background: #1e1e1e;
+      color: #aaa;
+    }
+
+    .interval-section {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .interval-section label {
+      display: block;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 0.75rem;
+    }
+
+    .interval-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .interval-input-row input {
+      background: #0f0f0f;
+      border: 1px solid #2e2e2e;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1.5rem;
+      font-variant-numeric: tabular-nums;
+      padding: 0.5rem 0.75rem;
+      width: 90px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .interval-input-row input:focus {
+      border-color: #f0a500;
+    }
+
+    .interval-input-row span {
+      color: #555;
+      font-size: 0.9rem;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #2a2a2a;
+      margin: 1.1rem 0;
+    }
+
+    .beep-count {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    .beep-count span {
+      color: #f0a500;
+      font-weight: 600;
+    }
+
+    .pause-countdown {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #e05555;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Interval Stopwatch (V3)</h1>
+
+    <div class="display" id="display">00:00</div>
+    <div class="ms" id="ms">.00</div>
+
+    <div class="progress-bar-wrapper">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="controls">
+      <button id="startStop">Start</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <div class="interval-section">
+      <label>Beep every</label>
+      <div class="interval-input-row">
+        <input type="number" id="minutes" min="0" max="99" value="0" placeholder="00">
+        <span>min</span>
+        <input type="number" id="seconds" min="0" max="59" value="30" placeholder="00">
+        <span>sec</span>
+      </div>
+      <hr class="divider">
+      <label>Pause for</label>
+      <div class="interval-input-row">
+        <input type="number" id="pauseSecs" min="0" max="3600" value="0" placeholder="0">
+        <span>sec &nbsp;(0 = no pause)</span>
+      </div>
+      <div class="beep-count">Beeps: <span id="beepCount">0</span></div>
+      <div class="pause-countdown" id="pauseCountdown"></div>
+    </div>
+  </div>
+
+  <script>
+    const displayEl = document.getElementById('display');
+    const msEl = document.getElementById('ms');
+    const progressBar = document.getElementById('progressBar');
+    const startStopBtn = document.getElementById('startStop');
+    const resetBtn = document.getElementById('reset');
+    const minutesInput = document.getElementById('minutes');
+    const secondsInput = document.getElementById('seconds');
+    const pauseSecsInput = document.getElementById('pauseSecs');
+    const beepCountEl = document.getElementById('beepCount');
+    const pauseCountdownEl = document.getElementById('pauseCountdown');
+
+    let running = false;
+    let startTime = 0;
+    let elapsed = 0;
+    let rafId = null;
+    let lastBeepAt = 0;
+    let beepCount = 0;
+    let audioCtx = null;
+    let autoPaused = false;
+    let pauseEndTime = 0;
+    let pauseRafId = null;
+
+    function getIntervalMs() {
+      const m = parseInt(minutesInput.value) || 0;
+      const s = parseInt(secondsInput.value) || 0;
+      return (m * 60 + s) * 1000;
+    }
+
+    function pad(n, len = 2) {
+      return String(Math.floor(n)).padStart(len, '0');
+    }
+
+    function updateDisplay(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const min = Math.floor(totalSec / 60);
+      const sec = totalSec % 60;
+      const centisec = Math.floor((ms % 1000) / 10);
+      displayEl.textContent = `${pad(min)}:${pad(sec)}`;
+      msEl.textContent = `.${pad(centisec)}`;
+
+      const interval = getIntervalMs();
+      if (interval > 0) {
+        const progress = ((ms - lastBeepAt) / interval) * 100;
+        progressBar.style.width = Math.min(progress, 100) + '%';
+      } else {
+        progressBar.style.width = '0%';
+      }
+    }
+
+    function getPauseDurationMs() {
+      return (parseInt(pauseSecsInput.value) || 0) * 1000;
+    }
+
+    function unlockAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      // iOS requires an actual buffer source to be played during the gesture to unlock
+      const silentBuf = audioCtx.createBuffer(1, 1, 22050);
+      const src = audioCtx.createBufferSource();
+      src.buffer = silentBuf;
+      src.connect(audioCtx.destination);
+      src.start(0);
+    }
+
+    function beep() {
+      unlockAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.3);
+
+      displayEl.classList.add('beeping');
+      setTimeout(() => displayEl.classList.remove('beeping'), 300);
+
+      beepCount++;
+      beepCountEl.textContent = beepCount;
+    }
+
+    function startAutoPause() {
+      const pauseDur = getPauseDurationMs();
+      if (pauseDur <= 0) return;
+
+      running = false;
+      autoPaused = true;
+      cancelAnimationFrame(rafId);
+      pauseEndTime = Date.now() + pauseDur;
+      displayEl.classList.add('paused-auto');
+      startStopBtn.textContent = 'Stop';
+      startStopBtn.classList.add('running');
+
+      function pauseTick() {
+        const remaining = pauseEndTime - Date.now();
+        if (remaining <= 0) {
+          endAutoPause();
+          return;
+        }
+        pauseCountdownEl.textContent = `Resuming in ${Math.ceil(remaining / 1000)}s…`;
+        pauseRafId = requestAnimationFrame(pauseTick);
+      }
+      pauseRafId = requestAnimationFrame(pauseTick);
+    }
+
+    function endAutoPause() {
+      autoPaused = false;
+      displayEl.classList.remove('paused-auto');
+      pauseCountdownEl.textContent = '';
+      startTime = Date.now() - elapsed;
+      running = true;
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function tick() {
+      elapsed = Date.now() - startTime;
+      updateDisplay(elapsed);
+
+      const interval = getIntervalMs();
+      if (interval > 0 && elapsed - lastBeepAt >= interval) {
+        lastBeepAt += interval;
+        beep();
+        startAutoPause();
+        return;
+      }
+
+      rafId = requestAnimationFrame(tick);
+    }
+
+    startStopBtn.addEventListener('click', () => {
+      unlockAudio();
+      if (autoPaused) {
+        // Manual resume during auto-pause
+        cancelAnimationFrame(pauseRafId);
+        pauseCountdownEl.textContent = '';
+        endAutoPause();
+        return;
+      }
+
+      if (!running) {
+        startTime = Date.now() - elapsed;
+        const iv = getIntervalMs();
+        lastBeepAt = iv > 0 ? Math.floor(elapsed / iv) * iv : 0;
+        running = true;
+        startStopBtn.textContent = 'Stop';
+        startStopBtn.classList.add('running');
+        rafId = requestAnimationFrame(tick);
+      } else {
+        running = false;
+        cancelAnimationFrame(rafId);
+        startStopBtn.textContent = 'Start';
+        startStopBtn.classList.remove('running');
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      running = false;
+      autoPaused = false;
+      cancelAnimationFrame(rafId);
+      cancelAnimationFrame(pauseRafId);
+      elapsed = 0;
+      lastBeepAt = 0;
+      beepCount = 0;
+      beepCountEl.textContent = '0';
+      pauseCountdownEl.textContent = '';
+      startStopBtn.textContent = 'Start';
+      startStopBtn.classList.remove('running');
+      displayEl.classList.remove('beeping', 'paused-auto');
+      updateDisplay(0);
+      progressBar.style.width = '0%';
+    });
+
+    // Clamp seconds input
+    secondsInput.addEventListener('change', () => {
+      let v = parseInt(secondsInput.value);
+      if (isNaN(v) || v < 0) secondsInput.value = 0;
+      else if (v > 59) secondsInput.value = 59;
+    });
+
+    minutesInput.addEventListener('change', () => {
+      let v = parseInt(minutesInput.value);
+      if (isNaN(v) || v < 0) minutesInput.value = 0;
+    });
+
+    updateDisplay(0);
+  </script>
+</body>
+</html>
